@@ -63,6 +63,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getUserByEmailWithPasswordStmt, err = db.PrepareContext(ctx, getUserByEmailWithPassword); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserByEmailWithPassword: %w", err)
 	}
+	if q.getUsersByRoleStmt, err = db.PrepareContext(ctx, getUsersByRole); err != nil {
+		return nil, fmt.Errorf("error preparing query GetUsersByRole: %w", err)
+	}
 	if q.listUsersStmt, err = db.PrepareContext(ctx, listUsers); err != nil {
 		return nil, fmt.Errorf("error preparing query ListUsers: %w", err)
 	}
@@ -71,6 +74,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	}
 	if q.updateUserStmt, err = db.PrepareContext(ctx, updateUser); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateUser: %w", err)
+	}
+	if q.updateUserRoleStmt, err = db.PrepareContext(ctx, updateUserRole); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateUserRole: %w", err)
 	}
 	return &q, nil
 }
@@ -142,6 +148,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getUserByEmailWithPasswordStmt: %w", cerr)
 		}
 	}
+	if q.getUsersByRoleStmt != nil {
+		if cerr := q.getUsersByRoleStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getUsersByRoleStmt: %w", cerr)
+		}
+	}
 	if q.listUsersStmt != nil {
 		if cerr := q.listUsersStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listUsersStmt: %w", cerr)
@@ -155,6 +166,11 @@ func (q *Queries) Close() error {
 	if q.updateUserStmt != nil {
 		if cerr := q.updateUserStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateUserStmt: %w", cerr)
+		}
+	}
+	if q.updateUserRoleStmt != nil {
+		if cerr := q.updateUserRoleStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateUserRoleStmt: %w", cerr)
 		}
 	}
 	return err
@@ -209,9 +225,11 @@ type Queries struct {
 	getUserStmt                    *sql.Stmt
 	getUserByEmailStmt             *sql.Stmt
 	getUserByEmailWithPasswordStmt *sql.Stmt
+	getUsersByRoleStmt             *sql.Stmt
 	listUsersStmt                  *sql.Stmt
 	updateFileStmt                 *sql.Stmt
 	updateUserStmt                 *sql.Stmt
+	updateUserRoleStmt             *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -231,8 +249,10 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getUserStmt:                    q.getUserStmt,
 		getUserByEmailStmt:             q.getUserByEmailStmt,
 		getUserByEmailWithPasswordStmt: q.getUserByEmailWithPasswordStmt,
+		getUsersByRoleStmt:             q.getUsersByRoleStmt,
 		listUsersStmt:                  q.listUsersStmt,
 		updateFileStmt:                 q.updateFileStmt,
 		updateUserStmt:                 q.updateUserStmt,
+		updateUserRoleStmt:             q.updateUserRoleStmt,
 	}
 }

@@ -77,11 +77,13 @@ func NewServer() (*http.Server, error) {
 	userService := service.NewUserService(userRepo)
 	fileService := service.NewFileService(fileRepo, fileStorage, cfg)
 	authService := service.NewAuthService(userRepo, jwtManager, cfg)
+	roleService := service.NewRoleService(userRepo)
 
 	// Initialize handlers
 	userHandler := handler.NewUserHandler(userService, validatorInstance)
 	fileHandler := handler.NewFileHandler(fileService, validatorInstance)
 	authHandler := handler.NewAuthHandler(authService, validatorInstance)
+	roleHandler := handler.NewRoleHandler(roleService, validatorInstance)
 
 	// Initialize middleware
 	rateLimiter := middleware.NewRateLimiter(100, time.Minute) // 100 requests per minute
@@ -94,7 +96,7 @@ func NewServer() (*http.Server, error) {
 	e.Use(middleware.RateLimitMiddleware(rateLimiter))
 
 	// Setup routes
-	router.SetupRoutes(e, db, userHandler, fileHandler, authHandler, jwtManager)
+	router.SetupRoutes(e, db, userHandler, fileHandler, authHandler, jwtManager, userRepo, roleHandler)
 
 	// Create HTTP server
 	httpServer := &http.Server{

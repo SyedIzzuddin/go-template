@@ -4,8 +4,8 @@ VALUES ($1, $2)
 RETURNING *;
 
 -- name: CreateUserWithPassword :one
-INSERT INTO users (name, email, password_hash)
-VALUES ($1, $2, $3)
+INSERT INTO users (name, email, password_hash, role)
+VALUES ($1, $2, $3, $4)
 RETURNING *;
 
 -- name: GetUser :one
@@ -40,4 +40,15 @@ WHERE id = $1;
 
 -- name: GetAllUsers :many
 SELECT * FROM users
+ORDER BY created_at DESC;
+
+-- name: UpdateUserRole :one
+UPDATE users
+SET role = $2, updated_at = NOW()
+WHERE id = $1
+RETURNING *;
+
+-- name: GetUsersByRole :many
+SELECT * FROM users
+WHERE role = $1
 ORDER BY created_at DESC;

@@ -9,6 +9,7 @@ import (
 	"go-template/internal/logger"
 	"go-template/internal/repository"
 	"go-template/pkg/jwt"
+	"go-template/pkg/roles"
 	"time"
 
 	"go.uber.org/zap"
@@ -58,8 +59,8 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*d
 		return nil, errors.New("failed to process password")
 	}
 
-	// Create user with hashed password
-	user, err := s.userRepo.CreateWithPassword(ctx, req.Name, req.Email, hashedPassword)
+	// Create user with hashed password and default role
+	user, err := s.userRepo.CreateWithPassword(ctx, req.Name, req.Email, hashedPassword, roles.User)
 	if err != nil {
 		logger.Error("Failed to create user", zap.Error(err))
 		return nil, errors.New("failed to create user")
@@ -79,6 +80,7 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*d
 			ID:        user.ID,
 			Name:      user.Name,
 			Email:     user.Email,
+			Role:      user.Role,
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
 		},
@@ -122,6 +124,7 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Aut
 			ID:        user.ID,
 			Name:      user.Name,
 			Email:     user.Email,
+			Role:      user.Role,
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
 		},
@@ -166,6 +169,7 @@ func (s *authService) GetUserProfile(ctx context.Context, userID int) (*dto.User
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
+		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}, nil

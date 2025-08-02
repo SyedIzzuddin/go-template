@@ -22,9 +22,11 @@ type Querier interface {
 	GetUser(ctx context.Context, id int32) (Users, error)
 	GetUserByEmail(ctx context.Context, email string) (Users, error)
 	GetUserByEmailWithPassword(ctx context.Context, email string) (Users, error)
+	GetUsersByRole(ctx context.Context, role string) ([]Users, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]Users, error)
 	UpdateFile(ctx context.Context, arg UpdateFileParams) (Files, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (Users, error)
+	UpdateUserRole(ctx context.Context, arg UpdateUserRoleParams) (Users, error)
 }
 
 var _ Querier = (*Queries)(nil)

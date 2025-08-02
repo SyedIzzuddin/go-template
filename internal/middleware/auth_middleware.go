@@ -1,7 +1,9 @@
 package middleware
 
 import (
+	"context"
 	"go-template/internal/logger"
+	"go-template/internal/repository"
 	"go-template/pkg/jwt"
 	"go-template/pkg/response"
 	"strings"
@@ -11,7 +13,7 @@ import (
 )
 
 // AuthMiddleware creates JWT authentication middleware
-func AuthMiddleware(jwtManager *jwt.JWTManager) echo.MiddlewareFunc {
+func AuthMiddleware(jwtManager *jwt.JWTManager, userRepo repository.UserRepository) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			requestID := c.Response().Header().Get(echo.HeaderXRequestID)
@@ -53,14 +55,26 @@ func AuthMiddleware(jwtManager *jwt.JWTManager) echo.MiddlewareFunc {
 				}
 			}
 
+			// Fetch user to get role information
+			user, err := userRepo.GetByID(context.Background(), claims.UserID)
+			if err != nil {
+				logger.Warn("User not found during authentication", 
+					zap.Error(err),
+					zap.Int("user_id", claims.UserID),
+					zap.String("request_id", requestID))
+				return response.Unauthorized(c, "User not found")
+			}
+
 			// Set user information in context
 			c.Set("user_id", claims.UserID)
 			c.Set("user_email", claims.Email)
+			c.Set("user_role", user.Role)
 
 			logger.Debug("Authentication successful", 
 				zap.String("request_id", requestID),
 				zap.Int("user_id", claims.UserID),
-				zap.String("user_email", claims.Email))
+				zap.String("user_email", claims.Email),
+				zap.String("user_role", user.Role))
 
 			return next(c)
 		}
@@ -69,7 +83,7 @@ func AuthMiddleware(jwtManager *jwt.JWTManager) echo.MiddlewareFunc {
 
 // OptionalAuthMiddleware creates optional JWT authentication middleware
 // Sets user info in context if valid token is provided, but doesn't require it
-func OptionalAuthMiddleware(jwtManager *jwt.JWTManager) echo.MiddlewareFunc {
+func OptionalAuthMiddleware(jwtManager *jwt.JWTManager, userRepo repository.UserRepository) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			requestID := c.Response().Header().Get(echo.HeaderXRequestID)
@@ -104,14 +118,27 @@ func OptionalAuthMiddleware(jwtManager *jwt.JWTManager) echo.MiddlewareFunc {
 				return next(c)
 			}
 
+			// Fetch user to get role information
+			user, err := userRepo.GetByID(context.Background(), claims.UserID)
+			if err != nil {
+				logger.Debug("User not found during optional authentication", 
+					zap.Error(err),
+					zap.Int("user_id", claims.UserID),
+					zap.String("request_id", requestID))
+				// Continue without authentication if user not found
+				return next(c)
+			}
+
 			// Set user information in context
 			c.Set("user_id", claims.UserID)
 			c.Set("user_email", claims.Email)
+			c.Set("user_role", user.Role)
 
 			logger.Debug("Optional authentication successful", 
 				zap.String("request_id", requestID),
 				zap.Int("user_id", claims.UserID),
-				zap.String("user_email", claims.Email))
+				zap.String("user_email", claims.Email),
+				zap.String("user_role", user.Role))
 
 			return next(c)
 		}

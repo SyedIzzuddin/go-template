@@ -29,4 +29,5 @@ type Users struct {
 	CreatedAt    sql.NullTime `db:"created_at" json:"created_at"`
 	UpdatedAt    sql.NullTime `db:"updated_at" json:"updated_at"`
 	PasswordHash string       `db:"password_hash" json:"password_hash"`
+	Role         string       `db:"role" json:"role"`
 }
